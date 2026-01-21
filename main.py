@@ -50,19 +50,48 @@ img_coada = pygame.transform.scale(img_coada, (dimensiune_bloc, dimensiune_bloc)
 pygame.font.init() 
 font_stil = pygame.font.SysFont("bahnschrift", 25)
 
-def deseneaza_sarpe(bloc, lista_sarpe):
+def calculeaza_unghi(segment_curent, segment_vecin):
+    dx = segment_curent[0] - segment_vecin[0]
+    dy = segment_curent[1] - segment_vecin[1]
+    
+    # Dacă PNG-ul tău original privește în SUS:
+    if dy < 0: return 0    # Sus (nicio rotație)
+    if dy > 0: return 180  # Jos
+    if dx > 0: return 270  # Dreapta
+    if dx < 0: return 90   # Stânga
+    return 0
+
+def deseneaza_sarpe(bloc, lista_sarpe, dx, dy):
     for i in range(len(lista_sarpe)):
         x, y = lista_sarpe[i][0], lista_sarpe[i][1]
         
-        if i == len(lista_sarpe) - 1:
-            # Desenăm capul (ultimul element adăugat)
-            ecran.blit(img_cap, (x, y))
+        if i == len(lista_sarpe) - 1: # CAPUL
+            if len(lista_sarpe) > 1:
+                unghi = calculeaza_unghi(lista_sarpe[i], lista_sarpe[i-1])
+            else:
+                # Folosim directia de miscare daca avem un singur segment
+                if dx > 0: unghi = 270 # Dreapta
+                elif dx < 0: unghi = 90 # Stanga
+                elif dy > 0: unghi = 180 # Jos
+                else: unghi = 0 # Sus (Default)
+                
+            img_rotita = pygame.transform.rotate(img_cap, unghi)
+            ecran.blit(img_rotita, (x, y))
+
+        # --- COADA ---
         elif i == 0 and len(lista_sarpe) > 1:
-            # Desenăm coada (primul element, doar dacă șarpele are mai mult de 1 segment)
-            ecran.blit(img_coada, (x, y))
+            # Coada se uită spre segmentul următor (i+1)
+            unghi = calculeaza_unghi(lista_sarpe[i+1], lista_sarpe[i])
+            img_rotita = pygame.transform.rotate(img_coada, unghi)
+            ecran.blit(img_rotita, (x, y))
+
+        # --- CORPUL ---
         else:
-            # Desenăm corpul (segmentele intermediare)
-            ecran.blit(img_corp, (x, y))
+            # Pentru un corp simplu, putem verifica segmentele vecine 
+            # ca să știm dacă e orizontal sau vertical
+            unghi = calculeaza_unghi(lista_sarpe[i], lista_sarpe[i-1])
+            img_rotita = pygame.transform.rotate(img_corp, unghi)
+            ecran.blit(img_rotita, (x, y))
 
 def ecran_pauza():
     global latime, inaltime, ecran # O singură declarare la început
@@ -196,7 +225,7 @@ def joc():
             if x == cap_sarpe:
                 game_close = True
 
-        deseneaza_sarpe(dimensiune_bloc, lista_sarpe)
+        deseneaza_sarpe(dimensiune_bloc, lista_sarpe, x1_schimbare, y1_schimbare)
         
         scor_text = font_stil.render(f"{lungime_sarpe - 1}", True, ALB)
         ecran.blit(scor_text, [10, 10])
