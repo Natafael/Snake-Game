@@ -7,7 +7,7 @@ def citeste_highscore():
         with open("highscore.txt", "r") as f:
             return int(f.read())
     except:
-        return 0  # Dacă fișierul nu există, high score-ul e 0
+        return 0
 
 def salveaza_highscore(scor):
     with open("highscore.txt", "w") as f:
@@ -16,7 +16,7 @@ def salveaza_highscore(scor):
 # 1. Inițializare Pygame și setări fereastră
 pygame.init()
 latime, inaltime = 600, 400
-ecran = pygame.display.set_mode((latime, inaltime))
+ecran = pygame.display.set_mode((latime, inaltime), pygame.RESIZABLE)
 pygame.display.set_caption('Snake Game - Proiectul meu')
 
 # 2. Culori și constante
@@ -32,80 +32,92 @@ ceas = pygame.time.Clock()
 
 pygame.font.init() 
 font_stil = pygame.font.SysFont("bahnschrift", 25)
-scor_font = pygame.font.SysFont("comicsansms", 35)
 
-# 3. Funcția pentru desenarea șarpelui
 def deseneaza_sarpe(bloc, lista_sarpe):
     for x in lista_sarpe:
         pygame.draw.rect(ecran, VERDE, [x[0], x[1], bloc, bloc])
 
 def joc():
+    global latime, inaltime, ecran
     game_over = False
     game_close = False
     high_score = citeste_highscore()
 
-    # Poziția inițială
-    x1, y1 = latime / 2, inaltime / 2
+    # Poziția inițială aliniată la grilă (folosim // 10 * 10)
+    x1 = (latime // 2 // 10) * 10
+    y1 = (inaltime // 2 // 10) * 10
     x1_schimbare, y1_schimbare = 0, 0
 
     lista_sarpe = []
     lungime_sarpe = 1
 
-    # Generare mâncare
-    mancare_x = round(random.randrange(0, latime - dimensiune_bloc) / 10.0) * 10.0
-    mancare_y = round(random.randrange(0, inaltime - dimensiune_bloc) / 10.0) * 10.0
+    # Generare mâncare aliniată perfect la grilă
+    mancare_x = random.randint(0, (latime - dimensiune_bloc) // 10) * 10
+    mancare_y = random.randint(0, (inaltime - dimensiune_bloc) // 10) * 10
 
     while not game_over:
 
-        # Așteaptă decizia de restart sau quit după pierdere
         while game_close == True:
             ecran.fill(ALBASTRU)
-
             scor_final = lungime_sarpe - 1
             if scor_final > high_score:
                 high_score = scor_final
                 salveaza_highscore(high_score)
 
+            mesaj_pierdut = font_stil.render("AI PIERDUT!", True, ROSU)
             mesaj_scor = font_stil.render(f"Scor curent: {scor_final}", True, ALB)
             mesaj_high = font_stil.render(f"High Score: {high_score}", True, VERDE)
+            mesaj_info = font_stil.render("Q - Iesire, C - Reincearca", True, ALB)
 
-            ecran.blit(mesaj_scor, [latime / 4, inaltime / 2.5])
-            ecran.blit(mesaj_high, [latime / 4, inaltime / 2])
+            ecran.blit(mesaj_pierdut, [latime // 3, inaltime // 4])
+            ecran.blit(mesaj_scor, [latime // 4, inaltime // 2.5])
+            ecran.blit(mesaj_high, [latime // 4, inaltime // 2])
+            ecran.blit(mesaj_info, [latime // 4, inaltime - 50])
 
-            mesaj_info = font_stil.render("Q - iesire, C - continuare", True, ALB )
-
-            ecran.blit(mesaj_info, [latime / 4, inaltime / 40])
-
-            # Aici poți adăuga un mesaj de "Ai pierdut! Apasă Q sau C"
             pygame.display.update()
 
             for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    game_over = True
+                    game_close = False
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_q:
                         game_over = True
                         game_close = False
                     if event.key == pygame.K_c:
                         joc()
+                if event.type == pygame.VIDEORESIZE:
+                    latime, inaltime = event.w, event.h
+                    ecran = pygame.display.set_mode((latime, inaltime), pygame.RESIZABLE)
 
-        # 4. Controlul tastelor
+        # Gestionare evenimente (Resize + Taste)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 game_over = True
+            
+            if event.type == pygame.VIDEORESIZE:
+                latime, inaltime = event.w, event.h
+                ecran = pygame.display.set_mode((latime, inaltime), pygame.RESIZABLE)
+                # Repoziționăm mâncarea dacă resize-ul a scos-o în afara ecranului
+                if mancare_x >= latime or mancare_y >= inaltime:
+                    mancare_x = random.randint(0, (latime - dimensiune_bloc) // 10) * 10
+                    mancare_y = random.randint(0, (inaltime - dimensiune_bloc) // 10) * 10
+
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
+                if event.key == pygame.K_LEFT and x1_schimbare == 0:
                     x1_schimbare = -dimensiune_bloc
                     y1_schimbare = 0
-                elif event.key == pygame.K_RIGHT:
+                elif event.key == pygame.K_RIGHT and x1_schimbare == 0:
                     x1_schimbare = dimensiune_bloc
                     y1_schimbare = 0
-                elif event.key == pygame.K_UP:
+                elif event.key == pygame.K_UP and y1_schimbare == 0:
                     y1_schimbare = -dimensiune_bloc
                     x1_schimbare = 0
-                elif event.key == pygame.K_DOWN:
+                elif event.key == pygame.K_DOWN and y1_schimbare == 0:
                     y1_schimbare = dimensiune_bloc
                     x1_schimbare = 0
 
-        # 5. Verificare coliziune cu pereții
+        # Verificare coliziune pereti
         if x1 >= latime or x1 < 0 or y1 >= inaltime or y1 < 0:
             game_close = True
 
@@ -116,27 +128,27 @@ def joc():
         # Desenare mâncare
         pygame.draw.rect(ecran, ROSU, [mancare_x, mancare_y, dimensiune_bloc, dimensiune_bloc])
         
-        # Logica de creștere a șarpelui
-        cap_sarpe = []
-        cap_sarpe.append(x1)
-        cap_sarpe.append(y1)
+        cap_sarpe = [x1, y1]
         lista_sarpe.append(cap_sarpe)
-        
         if len(lista_sarpe) > lungime_sarpe:
             del lista_sarpe[0]
 
-        # Verificare coliziune cu propriul corp
         for x in lista_sarpe[:-1]:
             if x == cap_sarpe:
                 game_close = True
 
         deseneaza_sarpe(dimensiune_bloc, lista_sarpe)
+        
+        # Scor în timp real
+        scor_text = font_stil.render(f"Scor: {lungime_sarpe - 1}", True, ALB)
+        ecran.blit(scor_text, [10, 10])
+        
         pygame.display.update()
 
-        # 6. Verificare dacă a mâncat mâncarea
+        # Verificare coliziune cu mâncarea (aliniere perfectă)
         if x1 == mancare_x and y1 == mancare_y:
-            mancare_x = round(random.randrange(0, latime - dimensiune_bloc) / 10.0) * 10.0
-            mancare_y = round(random.randrange(0, inaltime - dimensiune_bloc) / 10.0) * 10.0
+            mancare_x = random.randint(0, (latime - dimensiune_bloc) // 10) * 10
+            mancare_y = random.randint(0, (inaltime - dimensiune_bloc) // 10) * 10
             lungime_sarpe += 1
 
         ceas.tick(viteza)
@@ -144,4 +156,5 @@ def joc():
     pygame.quit()
     quit()
 
-joc()
+if __name__ == "__main__":
+    joc()
