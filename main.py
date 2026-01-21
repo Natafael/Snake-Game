@@ -15,6 +15,7 @@ def salveaza_highscore(scor):
 
 # 1. Inițializare Pygame și setări fereastră
 pygame.init()
+sunet_mancare = pygame.mixer.Sound("media/audio/bite-sound.wav")
 latime, inaltime = 600, 400
 ecran = pygame.display.set_mode((latime, inaltime), pygame.RESIZABLE)
 pygame.display.set_caption('Snake Game - Proiectul meu')
@@ -42,6 +43,11 @@ def joc():
     game_over = False
     game_close = False
     high_score = citeste_highscore()
+
+    # Încarcă muzica de fundal
+    pygame.mixer.music.load("media/audio/main-theme.mp3")
+# Redă muzica la infinit (parametrul -1)
+    pygame.mixer.music.play(-1)
 
     # Poziția inițială aliniată la grilă (folosim // 10 * 10)
     x1 = (latime // 2 // 10) * 10
@@ -147,6 +153,7 @@ def joc():
 
         # Verificare coliziune cu mâncarea (aliniere perfectă)
         if x1 == mancare_x and y1 == mancare_y:
+            sunet_mancare.play()  # REDĂ SUNETUL AICI
             mancare_x = random.randint(0, (latime - dimensiune_bloc) // 10) * 10
             mancare_y = random.randint(0, (inaltime - dimensiune_bloc) // 10) * 10
             lungime_sarpe += 1
