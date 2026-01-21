@@ -18,7 +18,7 @@ pygame.init()
 sunet_mancare = pygame.mixer.Sound("media/audio/bite-sound.wav")
 latime, inaltime = 600, 400
 ecran = pygame.display.set_mode((latime, inaltime), pygame.RESIZABLE)
-pygame.display.set_caption('Snake Game - Proiectul meu')
+pygame.display.set_caption('Examen SDA')
 
 # 2. Culori și constante
 NEGRU = (0, 0, 0)
@@ -39,10 +39,11 @@ def deseneaza_sarpe(bloc, lista_sarpe):
         pygame.draw.rect(ecran, VERDE, [x[0], x[1], bloc, bloc])
 
 def joc():
-    global latime, inaltime, ecran
+    global latime, inaltime, ecran, viteza
     game_over = False
     game_close = False
     high_score = citeste_highscore()
+    viteza = 15
 
     # Încarcă muzica de fundal
     pygame.mixer.music.load("media/audio/main-theme.mp3")
@@ -146,7 +147,7 @@ def joc():
         deseneaza_sarpe(dimensiune_bloc, lista_sarpe)
         
         # Scor în timp real
-        scor_text = font_stil.render(f"Scor: {lungime_sarpe - 1}", True, ALB)
+        scor_text = font_stil.render(f"{lungime_sarpe - 1}", True, ALB)
         ecran.blit(scor_text, [10, 10])
         
         pygame.display.update()
@@ -157,6 +158,7 @@ def joc():
             mancare_x = random.randint(0, (latime - dimensiune_bloc) // 10) * 10
             mancare_y = random.randint(0, (inaltime - dimensiune_bloc) // 10) * 10
             lungime_sarpe += 1
+            viteza += 1
 
         ceas.tick(viteza)
 
