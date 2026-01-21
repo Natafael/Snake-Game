@@ -37,25 +37,32 @@ dimensiune_bloc = 10
 viteza = 15
 ceas = pygame.time.Clock()
 
-img_mar = pygame.image.load("media/textures/apple.png")
-img_corp = pygame.image.load("media/textures/head.png")
-img_cap = pygame.image.load("media/textures/skin.png")
+img_mar = pygame.image.load("media/textures/zero.png").convert_alpha()
+img_corp = pygame.image.load("media/textures/two.png").convert_alpha()
+img_cap = pygame.image.load("media/textures/one.png").convert_alpha()
+img_coada = pygame.image.load("media/textures/three.png").convert_alpha()
 
-img_mar = pygame.transform.scale(img_mar, (20, 20))
+img_mar = pygame.transform.scale(img_mar, (dimensiune_bloc, dimensiune_bloc))
 img_corp = pygame.transform.scale(img_corp, (dimensiune_bloc, dimensiune_bloc))
-img_cap = pygame.transform.scale(img_cap, (20, 20))
+img_cap = pygame.transform.scale(img_cap, (dimensiune_bloc, dimensiune_bloc))
+img_coada = pygame.transform.scale(img_coada, (dimensiune_bloc, dimensiune_bloc))
 
 pygame.font.init() 
 font_stil = pygame.font.SysFont("bahnschrift", 25)
 
 def deseneaza_sarpe(bloc, lista_sarpe):
     for i in range(len(lista_sarpe)):
+        x, y = lista_sarpe[i][0], lista_sarpe[i][1]
+        
         if i == len(lista_sarpe) - 1:
-            # Dacă este ultimul element, desenăm capul
-            ecran.blit(img_cap, (lista_sarpe[i][0], lista_sarpe[i][1]))
+            # Desenăm capul (ultimul element adăugat)
+            ecran.blit(img_cap, (x, y))
+        elif i == 0 and len(lista_sarpe) > 1:
+            # Desenăm coada (primul element, doar dacă șarpele are mai mult de 1 segment)
+            ecran.blit(img_coada, (x, y))
         else:
-            # Altfel, desenăm corpul
-            ecran.blit(img_corp, (lista_sarpe[i][0], lista_sarpe[i][1]))
+            # Desenăm corpul (segmentele intermediare)
+            ecran.blit(img_corp, (x, y))
 
 def ecran_pauza():
     global latime, inaltime, ecran # O singură declarare la început
