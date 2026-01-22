@@ -41,11 +41,13 @@ img_mar = pygame.image.load("media/textures/zero.png").convert_alpha()
 img_corp = pygame.image.load("media/textures/two.png").convert_alpha()
 img_cap = pygame.image.load("media/textures/one.png").convert_alpha()
 img_coada = pygame.image.load("media/textures/three.png").convert_alpha()
+img_curba = pygame.image.load("media/textures/turn.png").convert_alpha()
 
 img_mar = pygame.transform.scale(img_mar, (dimensiune_bloc, dimensiune_bloc))
 img_corp = pygame.transform.scale(img_corp, (dimensiune_bloc, dimensiune_bloc))
 img_cap = pygame.transform.scale(img_cap, (dimensiune_bloc, dimensiune_bloc))
 img_coada = pygame.transform.scale(img_coada, (dimensiune_bloc, dimensiune_bloc))
+img_curba = pygame.transform.scale(img_curba, (dimensiune_bloc, dimensiune_bloc))
 
 pygame.font.init() 
 font_stil = pygame.font.SysFont("bahnschrift", 25)
@@ -65,33 +67,60 @@ def deseneaza_sarpe(bloc, lista_sarpe, dx, dy):
     for i in range(len(lista_sarpe)):
         x, y = lista_sarpe[i][0], lista_sarpe[i][1]
         
-        if i == len(lista_sarpe) - 1: # CAPUL
+        # 1. CAPUL
+        if i == len(lista_sarpe) - 1:
             if len(lista_sarpe) > 1:
                 unghi = calculeaza_unghi(lista_sarpe[i], lista_sarpe[i-1])
             else:
-                # Folosim directia de miscare daca avem un singur segment
-                if dx > 0: unghi = 270 # Dreapta
-                elif dx < 0: unghi = 90 # Stanga
-                elif dy > 0: unghi = 180 # Jos
-                else: unghi = 0 # Sus (Default)
-                
+                if dy < 0: unghi = 0
+                elif dy > 0: unghi = 180
+                elif dx > 0: unghi = 270
+                elif dx < 0: unghi = 90
+                else: unghi = 0
             img_rotita = pygame.transform.rotate(img_cap, unghi)
             ecran.blit(img_rotita, (x, y))
 
-        # --- COADA ---
+        # 2. COADA
         elif i == 0 and len(lista_sarpe) > 1:
-            # Coada se uită spre segmentul următor (i+1)
             unghi = calculeaza_unghi(lista_sarpe[i+1], lista_sarpe[i])
             img_rotita = pygame.transform.rotate(img_coada, unghi)
             ecran.blit(img_rotita, (x, y))
 
-        # --- CORPUL ---
+        # 3. CORPUL SAU COLȚUL
         else:
-            # Pentru un corp simplu, putem verifica segmentele vecine 
-            # ca să știm dacă e orizontal sau vertical
-            unghi = calculeaza_unghi(lista_sarpe[i], lista_sarpe[i-1])
-            img_rotita = pygame.transform.rotate(img_corp, unghi)
-            ecran.blit(img_rotita, (x, y))
+            prev_seg = lista_sarpe[i-1]
+            next_seg = lista_sarpe[i+1]
+            
+            # Calculăm diferențele față de vecini
+            # (unde a fost segmentul și unde va fi)
+            dx_p, dy_p = x - prev_seg[0], y - prev_seg[1]
+            dx_n, dy_n = next_seg[0] - x, next_seg[1] - y
+
+            if dx_p != dx_n or dy_p != dy_n:
+                # Detectăm colțul
+                # dx_p/dy_p = de unde vine (previous segment)
+                # dx_n/dy_n = încotro pleacă (next segment)
+
+                if (dx_p == bloc and dy_n == -bloc) or (dy_p == bloc and dx_n == -bloc):
+                    # Stânga -> Sus sau Jos -> Dreapta
+                    unghi = 0    
+                elif (dx_p == -bloc and dy_n == -bloc) or (dy_p == bloc and dx_n == bloc):
+                    # Dreapta -> Sus sau Jos -> Stânga
+                    unghi = 270   
+                elif (dx_p == -bloc and dy_n == bloc) or (dy_p == -bloc and dx_n == bloc):
+                    # Dreapta -> Jos sau Sus -> Stânga
+                    unghi = 180  
+                else:
+                    # Stânga -> Jos sau Sus -> Dreapta
+                    unghi = 90  
+                
+                img_rotita = pygame.transform.rotate(img_curba, unghi)
+                ecran.blit(img_rotita, (x, y))
+            else:
+                # CORP DREPT
+                unghi = calculeaza_unghi(lista_sarpe[i], lista_sarpe[i-1])
+                img_rotita = pygame.transform.rotate(img_corp, unghi)
+                ecran.blit(img_rotita, (x, y))
 
 def ecran_pauza():
     global latime, inaltime, ecran # O singură declarare la început
