@@ -1,6 +1,15 @@
 import pygame
 import time
 import random
+import os
+import sys
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
 def citeste_highscore():
     try:
@@ -13,20 +22,19 @@ def salveaza_highscore(scor):
     with open("highscore.txt", "w") as f:
         f.write(str(scor))
 
-# 1. Inițializare Pygame și setări fereastră
 pygame.init()
 pygame.mixer.init()
 
 try:
-    sunet_mancare = pygame.mixer.Sound("media/audio/bite-sound.wav")
+    sunet_mancare = pygame.mixer.Sound(resource_path("media/audio/bite-sound.wav"))
+
 except:
-    sunet_mancare = None # Fail-safe dacă lipsește fișierul
+    sunet_mancare = None 
 
 latime, inaltime = 600, 400
 ecran = pygame.display.set_mode((latime, inaltime), pygame.RESIZABLE)
 pygame.display.set_caption('Snake Game - Proiect Final')
 
-# 2. Culori și constante
 NEGRU = (0, 0, 0)
 ALB = (255, 255, 255)
 ROSU = (213, 50, 80)
@@ -37,11 +45,11 @@ dimensiune_bloc = 10
 viteza = 15
 ceas = pygame.time.Clock()
 
-img_mar = pygame.image.load("media/textures/zero.png").convert_alpha()
-img_corp = pygame.image.load("media/textures/two.png").convert_alpha()
-img_cap = pygame.image.load("media/textures/one.png").convert_alpha()
-img_coada = pygame.image.load("media/textures/three.png").convert_alpha()
-img_curba = pygame.image.load("media/textures/turn.png").convert_alpha()
+img_mar = pygame.image.load(resource_path("media/textures/zero.png")).convert_alpha()
+img_corp = pygame.image.load(resource_path("media/textures/two.png")).convert_alpha()
+img_cap = pygame.image.load(resource_path("media/textures/one.png")).convert_alpha()
+img_coada = pygame.image.load(resource_path("media/textures/three.png")).convert_alpha()
+img_curba = pygame.image.load(resource_path("media/textures/turn.png")).convert_alpha()
 
 img_mar = pygame.transform.scale(img_mar, (dimensiune_bloc, dimensiune_bloc))
 img_corp = pygame.transform.scale(img_corp, (dimensiune_bloc, dimensiune_bloc))
@@ -56,18 +64,16 @@ def calculeaza_unghi(segment_curent, segment_vecin):
     dx = segment_curent[0] - segment_vecin[0]
     dy = segment_curent[1] - segment_vecin[1]
     
-    # Dacă PNG-ul tău original privește în SUS:
-    if dy < 0: return 0    # Sus (nicio rotație)
-    if dy > 0: return 180  # Jos
-    if dx > 0: return 270  # Dreapta
-    if dx < 0: return 90   # Stânga
+    if dy < 0: return 0    
+    if dy > 0: return 180  
+    if dx > 0: return 270  
+    if dx < 0: return 90   
     return 0
 
 def deseneaza_sarpe(bloc, lista_sarpe, dx, dy):
     for i in range(len(lista_sarpe)):
         x, y = lista_sarpe[i][0], lista_sarpe[i][1]
         
-        # 1. CAPUL
         if i == len(lista_sarpe) - 1:
             if len(lista_sarpe) > 1:
                 unghi = calculeaza_unghi(lista_sarpe[i], lista_sarpe[i-1])
@@ -80,50 +86,38 @@ def deseneaza_sarpe(bloc, lista_sarpe, dx, dy):
             img_rotita = pygame.transform.rotate(img_cap, unghi)
             ecran.blit(img_rotita, (x, y))
 
-        # 2. COADA
         elif i == 0 and len(lista_sarpe) > 1:
             unghi = calculeaza_unghi(lista_sarpe[i+1], lista_sarpe[i])
             img_rotita = pygame.transform.rotate(img_coada, unghi)
             ecran.blit(img_rotita, (x, y))
 
-        # 3. CORPUL SAU COLȚUL
         else:
             prev_seg = lista_sarpe[i-1]
             next_seg = lista_sarpe[i+1]
             
-            # Calculăm diferențele față de vecini
-            # (unde a fost segmentul și unde va fi)
             dx_p, dy_p = x - prev_seg[0], y - prev_seg[1]
             dx_n, dy_n = next_seg[0] - x, next_seg[1] - y
 
             if dx_p != dx_n or dy_p != dy_n:
-                # Detectăm colțul
-                # dx_p/dy_p = de unde vine (previous segment)
-                # dx_n/dy_n = încotro pleacă (next segment)
 
                 if (dx_p == bloc and dy_n == -bloc) or (dy_p == bloc and dx_n == -bloc):
-                    # Stânga -> Sus sau Jos -> Dreapta
                     unghi = 0    
                 elif (dx_p == -bloc and dy_n == -bloc) or (dy_p == bloc and dx_n == bloc):
-                    # Dreapta -> Sus sau Jos -> Stânga
                     unghi = 270   
                 elif (dx_p == -bloc and dy_n == bloc) or (dy_p == -bloc and dx_n == bloc):
-                    # Dreapta -> Jos sau Sus -> Stânga
                     unghi = 180  
                 else:
-                    # Stânga -> Jos sau Sus -> Dreapta
                     unghi = 90  
                 
                 img_rotita = pygame.transform.rotate(img_curba, unghi)
                 ecran.blit(img_rotita, (x, y))
             else:
-                # CORP DREPT
                 unghi = calculeaza_unghi(lista_sarpe[i], lista_sarpe[i-1])
                 img_rotita = pygame.transform.rotate(img_corp, unghi)
                 ecran.blit(img_rotita, (x, y))
 
 def ecran_pauza():
-    global latime, inaltime, ecran # O singură declarare la început
+    global latime, inaltime, ecran 
     
     screenshot = ecran.copy()
     small_img = pygame.transform.smoothscale(screenshot, (latime // 4, inaltime // 4))
@@ -155,12 +149,35 @@ def ecran_pauza():
             if event.type == pygame.VIDEORESIZE:
                 latime, inaltime = event.w, event.h
                 ecran = pygame.display.set_mode((latime, inaltime), pygame.RESIZABLE)
-                # Re-facem blur-ul pentru noua dimensiune
+
                 small_img = pygame.transform.smoothscale(screenshot, (latime // 4, inaltime // 4))
                 blurred_img = pygame.transform.smoothscale(small_img, (latime, inaltime))
                 overlay = pygame.Surface((latime, inaltime))
                 overlay.set_alpha(128)
                 overlay.fill((0, 0, 0))
+                
+class Particula:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+        self.vx = random.uniform(-3, 3)
+        self.vy = random.uniform(-3, 3)
+        self.viata = 255  
+        self.culoare = (255, 255, 255) 
+
+    def miscare(self):
+        self.x += self.vx
+        self.y += self.vy
+        self.viata -= 15 
+
+    def desenare(self, ecran):
+        if self.viata > 0:
+       
+            s = pygame.Surface((3, 3))
+            s.set_alpha(self.viata)
+            s.fill(self.culoare)
+            ecran.blit(s, (self.x, self.y))
 
 def joc():
     global latime, inaltime, ecran, viteza
@@ -168,9 +185,10 @@ def joc():
     game_close = False
     high_score = citeste_highscore()
     viteza = 15
+    particule = []
 
     try:
-        pygame.mixer.music.load("media/audio/main-theme.mp3")
+        pygame.mixer.music.load(resource_path("media/audio/main-theme.mp3"))
         pygame.mixer.music.play(-1)
     except:
         pass
@@ -258,10 +276,20 @@ def joc():
         
         scor_text = font_stil.render(f"{lungime_sarpe - 1}", True, ALB)
         ecran.blit(scor_text, [10, 10])
+       
+        for p in particule[:]:
+            p.miscare()
+            p.desenare(ecran)
+            if p.viata <= 0:
+                particule.remove(p)
         pygame.display.update()
 
         if x1 == mancare_x and y1 == mancare_y:
             if sunet_mancare: sunet_mancare.play()
+            if x1 == mancare_x and y1 == mancare_y:
+         
+                for _ in range(15):
+                    particule.append(Particula(mancare_x + 5, mancare_y + 5))
             mancare_x = random.randint(0, (latime - dimensiune_bloc) // 10) * dimensiune_bloc
             mancare_y = random.randint(0, (inaltime - dimensiune_bloc) // 10) * dimensiune_bloc
             lungime_sarpe += 1
